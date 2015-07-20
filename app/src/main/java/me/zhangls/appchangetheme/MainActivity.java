@@ -2,66 +2,81 @@ package me.zhangls.appchangetheme;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
-import android.view.Menu;
-import android.view.MenuItem;
-
+import android.util.Log;
+import android.view.View;
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 public class MainActivity extends ActionBarActivity {
 
+    private static final String TAG = "MainActivity";
+    private View mainView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        mainView = findViewById(R.id.view);
+        mainView.setBackgroundResource(R.color.main_view_color);
+
+    }
+
+    public void theme1(View view) {
+        try {
+            File directory = Environment.getExternalStorageDirectory();
+            File file = new File(directory, "theme1.apk");
+            Log.d(TAG, "file exist:" + file.exists());
+            Resources apkResources = getAPKResources(this, file.getPath());
+            Drawable color = apkResources.getDrawable(R.color.main_view_color);
+            mainView.setBackground(color);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void theme2(View view) {
+        try {
+            File directory = Environment.getExternalStorageDirectory();
+            File file = new File(directory, "theme2.apk");
+            Log.d(TAG, "file exist:" + file.exists());
+            Resources apkResources = getAPKResources(this, file.getPath());
+            Drawable color = apkResources.getDrawable(R.color.main_view_color);
+            mainView.setBackground(color);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Resources getAPKResources(Context context, String apkPath) throws Exception {
+        //1.create AssetManager object(hide)
         String PATH_AssetManager = "android.content.res.AssetManager";
         Class assetMagCls = Class.forName(PATH_AssetManager);
         Constructor assetMagCt = assetMagCls.getConstructor((Class[]) null);
         Object assetMag = assetMagCt.newInstance((Object[]) null);
-        Class[] typeArgs = new Class[1];
-        typeArgs[0] = String.class;
-        Method assetMag_addAssetPathMtd = assetMagCls.getDeclaredMethod("addAssetPath", typeArgs);
-        Object[] valueArgs = new Object[1];
-//        valueArgs[0] = StorageUtils.getSkinDirectory(mContext) + apkPath.hashCode() + ".theme";
-        assetMag_addAssetPathMtd.invoke(assetMag, valueArgs);
+        //2.invoke AssetManager.addAssetPath(String path)(hide)
+        Method assetMag_addAssetPathMtd = assetMagCls.getDeclaredMethod("addAssetPath", String.class);
+        assetMag_addAssetPathMtd.invoke(assetMag, apkPath);
+        //3.create Constructor of Resources
         Resources res = context.getResources();
-        typeArgs = new Class[3];
+        Class[] typeArgs = new Class[3];
         typeArgs[0] = assetMag.getClass();
         typeArgs[1] = res.getDisplayMetrics().getClass();
         typeArgs[2] = res.getConfiguration().getClass();
         Constructor resCt = Resources.class.getConstructor(typeArgs);
-        valueArgs = new Object[3];
+        //4.invoke newInstance of Resources
+        Object[] valueArgs = new Object[3];
         valueArgs[0] = assetMag;
         valueArgs[1] = res.getDisplayMetrics();
         valueArgs[2] = res.getConfiguration();
         res = (Resources) resCt.newInstance(valueArgs);
         return res;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }
